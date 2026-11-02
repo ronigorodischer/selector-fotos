@@ -4,6 +4,19 @@ Primera aplicación funcional para revisar fotos sin subirlas a internet. El mot
 
 El botón **Mover seleccionadas** organiza los originales marcados **Se queda** en la subcarpeta `Seleccionadas` del proyecto. Muestra el lote antes de moverlo, conserva las subcarpetas y las parejas RAW + JPG, y omite las fotos que ya están allí. No sobrescribe archivos. Las tomas conservan su identidad, estrellas, ajustes y grupos en el catálogo; el movimiento de archivos no se revierte con Ctrl+Z.
 
+## Llevarlo a otro equipo sin GitHub
+
+Puedes copiar el paquete `selector-fotos.zip` al otro equipo y descomprimirlo. Luego instala Python y ejecuta **Instalar.cmd** y **Iniciar.cmd**, como se explica abajo. El ZIP lleva únicamente la aplicación, sin fotos ni catálogo personal.
+
+Si recibiste `selector-fotos.bundle`, contiene el historial Git de la aplicación y puedes clonarlo sin internet:
+
+```powershell
+git clone selector-fotos.bundle selector-fotos
+cd selector-fotos
+```
+
+La instalación de dependencias sí requiere internet la primera vez. La dirección de GitHub indicada abajo estará disponible después de publicar el repositorio; hasta entonces usa el ZIP o el bundle. Si clonaste un bundle, su `origin` apunta al archivo local. Después de publicar puedes cambiarlo con `git remote set-url origin https://github.com/ronigorodischer/selector-fotos.git`.
+
 ## Instalar en otro PC (Windows)
 
 1. Instala **Python 3.11 de 64 bits** desde [python.org](https://www.python.org/downloads/). Activa **Add Python to PATH**. También se admiten Python 3.12 y 3.13.
