@@ -1,6 +1,6 @@
 # Prueba completa · Halloween
 
-- Origen: `C:\Users\ronig\OneDrive\Escritorio\halloween`.
+- Origen: carpeta local `halloween` del equipo de prueba.
 - Sesión: **266 JPG**, 1,56 GB aproximadamente. No contiene ARW.
 - Primera pasada: **83.23 segundos**, con dos trabajos de análisis simultáneos.
 - Resultado actual: **197 grupos**, **61 fotos con rostros detectados**, **0 errores de análisis**.

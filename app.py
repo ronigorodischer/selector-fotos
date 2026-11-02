@@ -21,8 +21,8 @@ import zipfile
 from engine import BASE, Project, dumps, fingerprint, sha256
 from PIL import Image
 from editing import Renderer, validate as validate_adjustments
+import moving
 
-DEFAULT_SOURCE = Path(r'C:\Users\ronig\OneDrive\Escritorio\halloween')
 SETTINGS = BASE/'data'/'settings.json'
 
 
@@ -324,6 +324,8 @@ def handler_for(application):
                         SETTINGS.write_text(dumps({'source':str(application.project.root)}),encoding='utf-8')
                     elif path=='/api/trash/prepare': return self.respond(application.prepare_trash())
                     elif path=='/api/trash/commit': return self.respond(application.commit_trash(payload['id'],payload.get('confirmed')))
+                    elif path=='/api/move/prepare': return self.respond(moving.prepare(application))
+                    elif path=='/api/move/commit': return self.respond(moving.commit(application,payload['id'],payload.get('confirmed')))
                     elif path=='/api/shutdown':
                         if application.export_job['running']:raise ValueError('Espera a que termine la exportación o cancélala antes de cerrar.')
                         project.cancel.set()
@@ -353,6 +355,19 @@ def handler_for(application):
     return Handler
 
 
+def initial_source(explicit=None):
+    if explicit is not None:return Path(explicit)
+    if SETTINGS.exists():
+        try:
+            saved=Path(json.loads(SETTINGS.read_text('utf-8'))['source'])
+            if saved.is_dir():return saved
+        except (OSError,ValueError,KeyError,TypeError):pass
+    # A fresh checkout must not depend on another computer's user or Pictures path.
+    source=BASE/'data'/'inicio'
+    source.mkdir(parents=True,exist_ok=True)
+    return source
+
+
 def main():
     parser=argparse.ArgumentParser(description='Selector local de fotografías')
     parser.add_argument('--source',type=Path)
@@ -362,9 +377,7 @@ def main():
     parser.add_argument('--open',action='store_true',help='Abrir la interfaz en el navegador')
     parser.add_argument('--no-trash',action='store_true')
     args=parser.parse_args()
-    source=args.source
-    if not source and SETTINGS.exists(): source=Path(json.loads(SETTINGS.read_text('utf-8'))['source'])
-    source=source or (DEFAULT_SOURCE if DEFAULT_SOURCE.exists() else Path.home()/'Pictures')
+    source=initial_source(args.source)
     if args.analyze or args.audit:
         project=Project(source)
         if args.analyze:

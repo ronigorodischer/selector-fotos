@@ -1,4 +1,31 @@
 .deps/
-data/
+data/*
+!data/.gitkeep
 __pycache__/
 *.pyc
+.venv/
+.env
+.env.*
+!.env.example
+dist/
+*.bundle
+.DS_Store
+Thumbs.db
+/Imagen de ChatGPT*.png
+# Originals, previews, catalogs and exports stay on each device.
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.png
+*.PNG
+*.arw
+*.ARW
+*.dng
+*.DNG
+*.tif
+*.tiff
+*.heic
+*.sqlite
+*.sqlite-*
+*.zip

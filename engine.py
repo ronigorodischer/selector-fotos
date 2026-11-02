@@ -16,7 +16,8 @@ import threading
 import time
 
 BASE = Path(__file__).resolve().parent
-sys.path.insert(0, str(BASE / '.deps'))
+if sys.prefix==sys.base_prefix:  # Legacy installation only; never shadow a clean virtualenv.
+    sys.path.insert(0, str(BASE / '.deps'))
 os.environ.setdefault('OPENCV_LOG_LEVEL', 'ERROR')
 import cv2
 import numpy as np
@@ -172,6 +173,8 @@ class Project:
                 CREATE TABLE IF NOT EXISTS history (seq INTEGER PRIMARY KEY, shot_id TEXT, previous TEXT);
                 CREATE TABLE IF NOT EXISTS trash_log (operation TEXT, shot_id TEXT, path TEXT,
                     status TEXT, error TEXT, created REAL, PRIMARY KEY(operation,path));
+                CREATE TABLE IF NOT EXISTS move_log (operation TEXT, shot_id TEXT, source TEXT,
+                    destination TEXT, status TEXT, error TEXT, created REAL, PRIMARY KEY(operation,source));
             ''')
             if 'adjustments' not in {r['name'] for r in con.execute('PRAGMA table_info(shots)')}:
                 backup=self.folder/'project.before-editing.sqlite'
@@ -181,6 +184,23 @@ class Project:
                     finally:destination.close()
                 con.execute("ALTER TABLE shots ADD COLUMN adjustments TEXT NOT NULL DEFAULT '{}'")
         self.report = json.loads((self.folder/'report.json').read_text('utf-8')) if (self.folder/'report.json').exists() else None
+        self.recover_moves()
+
+    def recover_moves(self):
+        # A process may stop after renaming a file and before updating its catalog.
+        with self.lock,self.connect() as con:
+            for entry in con.execute("SELECT * FROM move_log WHERE status IN ('started','failed')").fetchall():
+                source=Path(entry['source']);target=Path(entry['destination'])
+                if source.exists() or not target.is_file() or not target.resolve().is_relative_to(self.root) or target.is_symlink():continue
+                row=con.execute('SELECT assets,analysis FROM shots WHERE id=?',(entry['shot_id'],)).fetchone()
+                if not row or not row['analysis']:continue
+                assets=json.loads(row['assets']);analysis=json.loads(row['analysis'])
+                expected=analysis['hashes'].get(str(source))
+                if not expected or sha256(target)!=expected:continue
+                assets=[{**a,'path':str(target),**fingerprint(target)} if a['path']==str(source) else a for a in assets]
+                analysis['hashes'][str(target)]=analysis['hashes'].pop(str(source))
+                con.execute('UPDATE shots SET assets=?,analysis=?,revision=revision+1 WHERE id=?',(dumps(assets),dumps(analysis),entry['shot_id']))
+                con.execute("UPDATE move_log SET status='moved',error='' WHERE operation=? AND source=?",(entry['operation'],str(source)))
 
     @contextmanager
     def connect(self):
@@ -220,6 +240,9 @@ class Project:
 
     def scan(self):
         candidates, issues = {}, []
+        with self.connect() as con:
+            moved_ids={r['shot_id'] for r in con.execute("SELECT DISTINCT shot_id FROM move_log WHERE status='moved'")}
+        moved_paths={a['path']:('catalog',s['id']) for s in self.rows() if s['id'] in moved_ids for a in s['assets']}
         for parent, dirs, files in os.walk(self.root, followlinks=False):
             dirs[:] = [d for d in sorted(dirs) if not (Path(parent)/d).is_symlink()]
             for name in sorted(files):
@@ -233,12 +256,14 @@ class Project:
                 try:
                     meta = metadata(path)
                     asset = {'path': str(path), 'name': name, 'extension': path.suffix.lower(), **fingerprint(path)}
-                    key = (str(path.parent), path.stem.casefold())
+                    key = moved_paths.get(str(path),(str(path.parent), path.stem.casefold()))
                     candidates.setdefault(key, []).append((asset, meta))
                 except Exception as exc:
                     issues.append({'file': str(path), 'error': str(exc)})
         count = 0
         with self.lock, self.connect() as con:
+            existing_paths={tuple(sorted(a['path'] for a in json.loads(row['assets']))):row['id']
+                            for row in con.execute('SELECT id,assets FROM shots WHERE trashed=0')}
             for key, entries in candidates.items():
                 jpeg = [e for e in entries if e[0]['extension'] in {'.jpg', '.jpeg'}]
                 raw = [e for e in entries if e[0]['extension'] == '.arw']
@@ -249,6 +274,7 @@ class Project:
                     assets = sorted([e[0] for e in group], key=lambda a: a['extension'] == '.arw')
                     meta = next(e[1] for e in group if e[0] == assets[0])
                     sid = hashlib.sha256('|'.join(a['path'] for a in assets).encode()).hexdigest()[:20]
+                    sid = existing_paths.get(tuple(sorted(a['path'] for a in assets)),sid)
                     old = con.execute('SELECT assets FROM shots WHERE id=?', (sid,)).fetchone()
                     encoded = dumps(assets)
                     con.execute('INSERT OR IGNORE INTO shots(id,name,assets,meta,group_id) VALUES(?,?,?,?,?)', (sid, assets[0]['name'], encoded, dumps(meta), sid))
@@ -486,10 +512,13 @@ class Project:
 
     def audit(self):
         manifest=json.loads((self.folder/'source_manifest.json').read_text('utf-8'))
+        with self.connect() as con:
+            relocated={r['source']:r['destination'] for r in con.execute("SELECT source,destination FROM move_log WHERE status='moved' ORDER BY created")}
         changed=[]
         for entry in manifest:
             try:
-                if fingerprint(entry['path'])!={k:entry[k] for k in ('size','mtime_ns')} or sha256(entry['path'])!=entry['sha256']:
+                path=relocated.get(entry['path'],entry['path'])
+                if fingerprint(path)!={k:entry[k] for k in ('size','mtime_ns')} or sha256(path)!=entry['sha256']:
                     changed.append(entry['path'])
             except OSError:
                 changed.append(entry['path'])

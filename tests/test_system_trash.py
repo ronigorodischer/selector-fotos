@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT/'.deps'))
+if sys.prefix==sys.base_prefix:sys.path.insert(0,str(ROOT/'.deps'))
 
 
 class SystemTrashTest(unittest.TestCase):

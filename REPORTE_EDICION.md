@@ -16,9 +16,9 @@
 
 Tiempo: **384.79 segundos** (aproximadamente 6 minutos y 25 segundos), lado mayor 1600 px, calidad 95, un trabajo de exportación a la vez. Cada JPG se abrió y comprobó su tamaño y perfil ICC; el ZIP pasó la comprobación de integridad. Tamaño del ZIP: **123.5 MiB**.
 
-[Copia de prueba de los 266 JPG](<D:/sELECDE FOTOS/data/validacion-edicion-31a4c798/04ccea8999f9dbcc/exports/393416aba16e7d180b78891b70d891ee/seleccion-editada.zip>).
+[Copia de prueba de los 266 JPG](<data/validacion-edicion-31a4c798/04ccea8999f9dbcc/exports/393416aba16e7d180b78891b70d891ee/seleccion-editada.zip>).
 
-[Registro de validación](<D:/sELECDE FOTOS/data/validacion-edicion-31a4c798/validacion.json>).
+[Registro de validación](<data/validacion-edicion-31a4c798/validacion.json>).
 
 La auditoría final confirma **266/266 originales intactos por tamaño, fecha y SHA-256**. Proyecto real al entregar: 266 pendientes, 0 conservadas, 0 rechazadas y 0 tomas con ajustes de prueba guardados.
 
