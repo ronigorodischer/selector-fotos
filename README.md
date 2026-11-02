@@ -15,12 +15,12 @@ git clone selector-fotos.bundle selector-fotos
 cd selector-fotos
 ```
 
-La instalación de dependencias sí requiere internet la primera vez. La dirección de GitHub indicada abajo estará disponible después de publicar el repositorio; hasta entonces usa el ZIP o el bundle. Si clonaste un bundle, su `origin` apunta al archivo local. Después de publicar puedes cambiarlo con `git remote set-url origin https://github.com/ronigorodischer/selector-fotos.git`.
+La instalación de dependencias sí requiere internet la primera vez. Si clonaste un bundle, su `origin` apunta al archivo local. Para recibir actualizaciones desde GitHub puedes cambiarlo con `git remote set-url origin https://github.com/ronigorodischer/selector-fotos.git`.
 
 ## Instalar en otro PC (Windows)
 
 1. Instala **Python 3.11 de 64 bits** desde [python.org](https://www.python.org/downloads/). Activa **Add Python to PATH**. También se admiten Python 3.12 y 3.13.
-2. Inicia sesión en GitHub con la cuenta que tenga acceso al [repositorio privado](https://github.com/ronigorodischer/selector-fotos). Puedes clonarlo con Git o descargar **Code → Download ZIP** y descomprimirlo.
+2. Abre el [repositorio público](https://github.com/ronigorodischer/selector-fotos). Puedes clonarlo con Git o descargar **Code → Download ZIP** y descomprimirlo.
 
    ```powershell
    git clone https://github.com/ronigorodischer/selector-fotos.git
